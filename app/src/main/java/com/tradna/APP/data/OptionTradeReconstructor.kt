@@ -578,6 +578,11 @@ object OptionTradeReconstructor {
                             0.000001
                         ) {
                             OptionTradeStatus.CLOSED
+                        } else if (
+                            closingContracts >
+                            0.0
+                        ) {
+                            OptionTradeStatus.PARTIAL
                         } else {
                             OptionTradeStatus.OPEN
                         }

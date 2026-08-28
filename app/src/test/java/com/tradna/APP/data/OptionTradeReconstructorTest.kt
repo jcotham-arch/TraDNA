@@ -54,7 +54,7 @@ class OptionTradeReconstructorTest {
         )
 
         with(episodes.single()) {
-            assertEquals(OptionTradeStatus.OPEN, status)
+            assertEquals(OptionTradeStatus.PARTIAL, status)
             assertEquals(2.0, netContracts, TOLERANCE)
             assertEquals(50.0, realizedPnl, TOLERANCE)
             assertEquals(null, closeDate)
