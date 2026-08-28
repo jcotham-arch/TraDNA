@@ -1,0 +1,244 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "5336a88a611e429e10a083eb0a4ebfbd",
+    "entities": [
+      {
+        "tableName": "normalized_trade_activities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `source` TEXT NOT NULL, `accountId` TEXT, `assetClass` TEXT NOT NULL, `symbol` TEXT NOT NULL, `underlyingSymbol` TEXT, `side` TEXT NOT NULL, `quantity` REAL NOT NULL, `price` REAL, `activityDate` TEXT NOT NULL, `commission` REAL NOT NULL, `fees` REAL NOT NULL, `optionExpirationDate` TEXT, `optionStrikePrice` REAL, `optionRight` TEXT, `optionContractMultiplier` REAL, `futuresRootSymbol` TEXT, `futuresExpirationDate` TEXT, `futuresPointValue` REAL, `futuresTickSize` REAL, `futuresTickValue` REAL, `orderId` TEXT, `status` TEXT, `notes` TEXT, `rawDescription` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "assetClass",
+            "columnName": "assetClass",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "symbol",
+            "columnName": "symbol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "underlyingSymbol",
+            "columnName": "underlyingSymbol",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "price",
+            "columnName": "price",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "activityDate",
+            "columnName": "activityDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "commission",
+            "columnName": "commission",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fees",
+            "columnName": "fees",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "optionExpirationDate",
+            "columnName": "optionExpirationDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "optionStrikePrice",
+            "columnName": "optionStrikePrice",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "optionRight",
+            "columnName": "optionRight",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "optionContractMultiplier",
+            "columnName": "optionContractMultiplier",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "futuresRootSymbol",
+            "columnName": "futuresRootSymbol",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "futuresExpirationDate",
+            "columnName": "futuresExpirationDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "futuresPointValue",
+            "columnName": "futuresPointValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "futuresTickSize",
+            "columnName": "futuresTickSize",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "futuresTickValue",
+            "columnName": "futuresTickValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "orderId",
+            "columnName": "orderId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rawDescription",
+            "columnName": "rawDescription",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_normalized_trade_activities_source",
+            "unique": false,
+            "columnNames": [
+              "source"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_normalized_trade_activities_source` ON `${TABLE_NAME}` (`source`)"
+          },
+          {
+            "name": "index_normalized_trade_activities_assetClass",
+            "unique": false,
+            "columnNames": [
+              "assetClass"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_normalized_trade_activities_assetClass` ON `${TABLE_NAME}` (`assetClass`)"
+          },
+          {
+            "name": "index_normalized_trade_activities_symbol",
+            "unique": false,
+            "columnNames": [
+              "symbol"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_normalized_trade_activities_symbol` ON `${TABLE_NAME}` (`symbol`)"
+          },
+          {
+            "name": "index_normalized_trade_activities_activityDate",
+            "unique": false,
+            "columnNames": [
+              "activityDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_normalized_trade_activities_activityDate` ON `${TABLE_NAME}` (`activityDate`)"
+          },
+          {
+            "name": "index_normalized_trade_activities_source_accountId_symbol",
+            "unique": false,
+            "columnNames": [
+              "source",
+              "accountId",
+              "symbol"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_normalized_trade_activities_source_accountId_symbol` ON `${TABLE_NAME}` (`source`, `accountId`, `symbol`)"
+          }
+        ]
+      },
+      {
+        "tableName": "import_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storageKey` TEXT NOT NULL, `lastFileName` TEXT NOT NULL, `lastSource` TEXT NOT NULL, `lastImportedAtEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`storageKey`))",
+        "fields": [
+          {
+            "fieldPath": "storageKey",
+            "columnName": "storageKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastFileName",
+            "columnName": "lastFileName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSource",
+            "columnName": "lastSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastImportedAtEpochMillis",
+            "columnName": "lastImportedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "storageKey"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5336a88a611e429e10a083eb0a4ebfbd')"
+    ]
+  }
+}
