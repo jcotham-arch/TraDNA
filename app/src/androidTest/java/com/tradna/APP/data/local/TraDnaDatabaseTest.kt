@@ -19,7 +19,12 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TraDnaDatabaseTest {
-    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    /*
+     * Use the instrumentation package context, not targetContext.
+     * This keeps migration fixtures and cleanup isolated from the user's
+     * installed TraDNA application data on a physical device.
+     */
+    private val context = InstrumentationRegistry.getInstrumentation().context
     private lateinit var database: TraDnaDatabase
 
     @Before
@@ -66,6 +71,7 @@ class TraDnaDatabaseTest {
         assertFalse(first.alreadyCompleted)
         assertEquals(1, first.insertedRecordCount)
         assertTrue(second.alreadyCompleted)
+        assertEquals(0, second.insertedRecordCount)
         assertEquals(1, second.databaseRecordCount)
         assertEquals(1, UniversalTradingDataStorage.loadActivities(context).size)
 

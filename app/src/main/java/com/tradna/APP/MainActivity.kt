@@ -59,6 +59,9 @@ import com.tradna.APP.data.TradingPlatformSource
 import com.tradna.APP.data.UniversalAssetReconstructionEngine
 import com.tradna.APP.data.UniversalAssetReconstructionOutcome
 import com.tradna.APP.data.UniversalTradingDataStorage
+import com.tradna.APP.data.local.LegacyNormalizedActivityMigration
+import com.tradna.APP.data.local.NormalizedActivityRoomRepository
+import com.tradna.APP.data.local.TraDnaDatabase
 import com.tradna.APP.market.AlpacaMarketData
 import com.tradna.APP.market.Candle
 import com.tradna.APP.market.CandleChart
@@ -66,6 +69,9 @@ import com.tradna.APP.replay.HistoricalTradeReviewScreen
 import com.tradna.APP.replay.MultiAssetLabHost
 import com.tradna.APP.replay.MultiAssetReplayHost
 import com.tradna.APP.ui.theme.TraDNATheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -139,6 +145,20 @@ fun TraDNAApp() {
 
     val context = LocalContext.current
 
+    val roomDatabase = remember(context) {
+        TraDnaDatabase.getInstance(context)
+    }
+
+    val normalizedRoomRepository = remember(roomDatabase) {
+        NormalizedActivityRoomRepository(roomDatabase)
+    }
+
+    val persistenceScope = rememberCoroutineScope()
+
+    var normalizedStorageError by remember {
+        mutableStateOf<String?>(null)
+    }
+
     var selectedDestination by remember {
         mutableStateOf(TraDestination.HOME)
     }
@@ -167,6 +187,27 @@ fun TraDNAApp() {
                 context
             )
         )
+    }
+
+    LaunchedEffect(normalizedRoomRepository) {
+        try {
+            val canonicalActivities = withContext(Dispatchers.IO) {
+                LegacyNormalizedActivityMigration(
+                    context = context,
+                    database = roomDatabase
+                ).migrateIfNeeded()
+
+                normalizedRoomRepository.loadActivities()
+            }
+
+            normalizedActivities = canonicalActivities
+            normalizedStorageError = null
+        } catch (error: Exception) {
+            normalizedStorageError =
+                "TraDNA could not verify its local database. " +
+                        "Legacy trading history remains available. " +
+                        (error.message ?: "Unknown storage error.")
+        }
     }
 
     val trades = remember(activities) {
@@ -329,6 +370,8 @@ fun TraDNAApp() {
                                     normalizedOptionTradeCount,
                                 normalizedFuturesTradeCount =
                                     normalizedFuturesTradeCount,
+                                storageError =
+                                    normalizedStorageError,
 
                                 onImportComplete = {
                                         mergedActivities,
@@ -343,10 +386,38 @@ fun TraDNAApp() {
 
                                 onNormalizedImportComplete = {
                                         mergedActivities,
-                                        _ ->
+                                        fileName,
+                                        source ->
 
                                     normalizedActivities =
                                         mergedActivities
+
+                                    persistenceScope.launch {
+                                        try {
+                                            val canonicalActivities =
+                                                withContext(Dispatchers.IO) {
+                                                    normalizedRoomRepository
+                                                        .mergeActivities(
+                                                            incomingActivities =
+                                                                mergedActivities,
+                                                            source = source,
+                                                            fileName = fileName
+                                                        )
+                                                        .mergedActivities
+                                                }
+
+                                            normalizedActivities =
+                                                canonicalActivities
+
+                                            normalizedStorageError = null
+                                        } catch (error: Exception) {
+                                            normalizedStorageError =
+                                                "The import remains in legacy storage, " +
+                                                        "but Room synchronization failed. " +
+                                                        (error.message
+                                                            ?: "Unknown storage error.")
+                                        }
+                                    }
                                 },
 
                                 onViewActivity = {
@@ -521,6 +592,7 @@ fun HomeScreen(
     normalizedStockTradeCount: Int,
     normalizedOptionTradeCount: Int,
     normalizedFuturesTradeCount: Int,
+    storageError: String?,
 
     onImportComplete:
         (
@@ -531,7 +603,8 @@ fun HomeScreen(
     onNormalizedImportComplete:
         (
         List<NormalizedTradeActivity>,
-        String
+        String,
+        TradingPlatformSource
     ) -> Unit,
 
     onViewActivity: () -> Unit,
@@ -670,7 +743,8 @@ fun HomeScreen(
                                     onNormalizedImportComplete(
                                         mergeResult
                                             .mergedActivities,
-                                        fileNameValue
+                                        fileNameValue,
+                                        reconstructed.source
                                     )
                                 }
                             }
@@ -951,14 +1025,18 @@ fun HomeScreen(
             }
         }
 
-        if (importError != null) {
+        val visibleError =
+            importError
+                ?: storageError
+
+        if (visibleError != null) {
 
             Spacer(
                 Modifier.height(18.dp)
             )
 
             Text(
-                text = importError!!,
+                text = visibleError,
                 color = TraRed
             )
         }

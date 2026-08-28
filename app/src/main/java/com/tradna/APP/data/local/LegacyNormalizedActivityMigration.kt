@@ -25,15 +25,6 @@ class LegacyNormalizedActivityMigration(
             ImportStateEntity.LEGACY_NORMALIZED_MIGRATION
         )
 
-        if (existingMarker != null) {
-            return LegacyNormalizedMigrationResult(
-                alreadyCompleted = true,
-                legacyRecordCount = 0,
-                insertedRecordCount = 0,
-                databaseRecordCount = dao.count()
-            )
-        }
-
         /*
          * Read legacy preferences before opening the database transaction.
          * Preferences remain untouched after a successful copy so an older
@@ -50,7 +41,10 @@ class LegacyNormalizedActivityMigration(
             )
             val insertedCount = insertResults.count { it != -1L }
 
-            if (legacyActivities.isNotEmpty()) {
+            if (
+                legacyActivities.isNotEmpty() &&
+                existingMarker == null
+            ) {
                 dao.upsertImportState(
                     ImportStateEntity(
                         storageKey = ImportStateEntity.NORMALIZED_HISTORY,
@@ -61,17 +55,19 @@ class LegacyNormalizedActivityMigration(
                 )
             }
 
-            dao.upsertImportState(
-                ImportStateEntity(
-                    storageKey = ImportStateEntity.LEGACY_NORMALIZED_MIGRATION,
-                    lastFileName = "completed",
-                    lastSource = legacySource.name,
-                    lastImportedAtEpochMillis = migratedAtEpochMillis
+            if (existingMarker == null) {
+                dao.upsertImportState(
+                    ImportStateEntity(
+                        storageKey = ImportStateEntity.LEGACY_NORMALIZED_MIGRATION,
+                        lastFileName = "completed",
+                        lastSource = legacySource.name,
+                        lastImportedAtEpochMillis = migratedAtEpochMillis
+                    )
                 )
-            )
+            }
 
             LegacyNormalizedMigrationResult(
-                alreadyCompleted = false,
+                alreadyCompleted = existingMarker != null,
                 legacyRecordCount = legacyActivities.size,
                 insertedRecordCount = insertedCount,
                 databaseRecordCount = dao.count()
