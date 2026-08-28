@@ -61,6 +61,19 @@ class OptionTradeReconstructorTest {
         }
     }
 
+    @Test
+    fun `reconstructing the same option history produces a stable episode id`() {
+        val history = listOf(
+            option("open-stable", "7/3/2026", OptionTransactionType.BUY_TO_OPEN, 1.0, 1.00),
+            option("close-stable", "7/4/2026", OptionTransactionType.SELL_TO_CLOSE, 1.0, 1.50)
+        )
+
+        val firstId = OptionTradeReconstructor.reconstruct(history).single().id
+        val secondId = OptionTradeReconstructor.reconstruct(history).single().id
+
+        assertEquals(firstId, secondId)
+    }
+
     private fun option(
         id: String,
         date: String,

@@ -2,6 +2,7 @@ package com.tradna.APP.data
 
 import com.tradna.APP.market.OptionInstrument
 import com.tradna.APP.market.OptionRight
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.math.abs
 
@@ -190,7 +191,19 @@ object OptionTradeReconstructor {
                 episodes.add(
                     OptionTradeEpisode(
                         id =
-                            UUID.randomUUID()
+                            UUID.nameUUIDFromBytes(
+                                listOf(
+                                    contract.symbol,
+                                    episodeOpenDate,
+                                    currentExecutions.first().id
+                                )
+                                    .joinToString(
+                                        separator = "|"
+                                    )
+                                    .toByteArray(
+                                        StandardCharsets.UTF_8
+                                    )
+                            )
                                 .toString(),
 
                         contract =
