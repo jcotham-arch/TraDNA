@@ -14,5 +14,7 @@ data class ImportStateEntity(
     companion object {
         const val NORMALIZED_HISTORY = "normalized_history"
         const val LEGACY_NORMALIZED_MIGRATION = "legacy_normalized_migration_v1"
+        const val ROBINHOOD_HISTORY = "robinhood_history"
+        const val LEGACY_ROBINHOOD_MIGRATION = "legacy_robinhood_migration_v1"
     }
 }

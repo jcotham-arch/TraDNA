@@ -1,6 +1,7 @@
 package com.tradna.APP.data.local
 
 import androidx.room.Room
+import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tradna.APP.data.NormalizedAssetClass
@@ -14,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -26,6 +28,12 @@ class TraDnaDatabaseTest {
      */
     private val context = InstrumentationRegistry.getInstrumentation().context
     private lateinit var database: TraDnaDatabase
+
+    @get:Rule
+    val migrationHelper = MigrationTestHelper(
+        InstrumentationRegistry.getInstrumentation(),
+        TraDnaDatabase::class.java
+    )
 
     @Before
     fun setUp() {
@@ -80,6 +88,19 @@ class TraDnaDatabaseTest {
         )
         assertEquals("legacy.csv", state?.lastFileName)
         assertEquals(123L, state?.lastImportedAtEpochMillis)
+    }
+
+    @Test
+    fun schemaOneMigratesToSchemaTwoWithoutDestructiveFallback() {
+        val databaseName = "tradna-migration-test"
+
+        migrationHelper.createDatabase(databaseName, 1).close()
+        migrationHelper.runMigrationsAndValidate(
+            databaseName,
+            2,
+            true,
+            TraDnaDatabase.MIGRATION_1_2
+        ).close()
     }
 
     private fun activity(id: String) = NormalizedTradeActivity(

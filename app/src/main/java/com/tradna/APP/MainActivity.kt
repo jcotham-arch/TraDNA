@@ -60,7 +60,9 @@ import com.tradna.APP.data.UniversalAssetReconstructionEngine
 import com.tradna.APP.data.UniversalAssetReconstructionOutcome
 import com.tradna.APP.data.UniversalTradingDataStorage
 import com.tradna.APP.data.local.LegacyNormalizedActivityMigration
+import com.tradna.APP.data.local.LegacyRobinhoodActivityMigration
 import com.tradna.APP.data.local.NormalizedActivityRoomRepository
+import com.tradna.APP.data.local.RobinhoodActivityRoomRepository
 import com.tradna.APP.data.local.TraDnaDatabase
 import com.tradna.APP.market.AlpacaMarketData
 import com.tradna.APP.market.Candle
@@ -153,6 +155,10 @@ fun TraDNAApp() {
         NormalizedActivityRoomRepository(roomDatabase)
     }
 
+    val robinhoodRoomRepository = remember(roomDatabase) {
+        RobinhoodActivityRoomRepository(roomDatabase)
+    }
+
     val persistenceScope = rememberCoroutineScope()
 
     var normalizedStorageError by remember {
@@ -189,18 +195,30 @@ fun TraDNAApp() {
         )
     }
 
-    LaunchedEffect(normalizedRoomRepository) {
+    LaunchedEffect(
+        normalizedRoomRepository,
+        robinhoodRoomRepository
+    ) {
         try {
-            val canonicalActivities = withContext(Dispatchers.IO) {
+            val canonicalHistory = withContext(Dispatchers.IO) {
+                LegacyRobinhoodActivityMigration(
+                    context = context,
+                    database = roomDatabase
+                ).migrateIfNeeded()
+
                 LegacyNormalizedActivityMigration(
                     context = context,
                     database = roomDatabase
                 ).migrateIfNeeded()
 
-                normalizedRoomRepository.loadActivities()
+                Pair(
+                    robinhoodRoomRepository.loadActivities(),
+                    normalizedRoomRepository.loadActivities()
+                )
             }
 
-            normalizedActivities = canonicalActivities
+            activities = canonicalHistory.first
+            normalizedActivities = canonicalHistory.second
             normalizedStorageError = null
         } catch (error: Exception) {
             normalizedStorageError =
@@ -382,6 +400,32 @@ fun TraDNAApp() {
 
                                     importedFileName =
                                         fileName
+
+                                    persistenceScope.launch {
+                                        try {
+                                            val canonicalActivities =
+                                                withContext(Dispatchers.IO) {
+                                                    robinhoodRoomRepository
+                                                        .mergeActivities(
+                                                            incomingActivities =
+                                                                mergedActivities,
+                                                            fileName = fileName
+                                                        )
+                                                        .mergedActivities
+                                                }
+
+                                            activities =
+                                                canonicalActivities
+
+                                            normalizedStorageError = null
+                                        } catch (error: Exception) {
+                                            normalizedStorageError =
+                                                "The Robinhood import remains in legacy storage, " +
+                                                        "but Room synchronization failed. " +
+                                                        (error.message
+                                                            ?: "Unknown storage error.")
+                                        }
+                                    }
                                 },
 
                                 onNormalizedImportComplete = {
