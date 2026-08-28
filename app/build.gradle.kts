@@ -51,23 +51,42 @@ android {
             "androidx.test.runner.AndroidJUnitRunner"
 
         /*
-         * Makes the private Alpaca credentials available to the app
-         * through BuildConfig.
+         * Declare the fields for every build variant, but never place
+         * workstation credentials in the default/release configuration.
          */
         buildConfigField(
             "String",
             "ALPACA_API_KEY",
-            "\"$alpacaApiKey\""
+            "\"\""
         )
 
         buildConfigField(
             "String",
             "ALPACA_SECRET_KEY",
-            "\"$alpacaSecretKey\""
+            "\"\""
         )
     }
 
     buildTypes {
+        debug {
+            /*
+             * Temporary local-development access only. Debug APKs must
+             * never be distributed as production builds because Android
+             * BuildConfig values can be extracted from an APK.
+             */
+            buildConfigField(
+                "String",
+                "ALPACA_API_KEY",
+                "\"$alpacaApiKey\""
+            )
+
+            buildConfigField(
+                "String",
+                "ALPACA_SECRET_KEY",
+                "\"$alpacaSecretKey\""
+            )
+        }
+
         release {
             isMinifyEnabled = false
 
