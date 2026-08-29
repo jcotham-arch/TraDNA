@@ -10,6 +10,8 @@ execution. The Android application remains the client and offline cache.
 - No order-placement endpoint exists.
 - Provider keys are read from backend environment variables only.
 - Raw brokerage events are immutable; derived analyses are versioned.
+- CSV reports retain a source hash for provenance, not the original document.
+- Brokerage-data upload endpoints remain unavailable until authentication is implemented.
 
 ## Local development
 
@@ -19,7 +21,11 @@ Copy `.env.example` to `.env`, use non-production local values, then run:
 docker compose up --build
 ```
 
-The API health endpoint is `GET /v1/health`.
+The public API health endpoint is `GET /v1/health`. After configuring a random
+`TRADNA_CLIENT_API_TOKEN` of at least 32 characters, an authenticated client can
+send a Robinhood export as a `text/csv` body to
+`POST /v1/imports/robinhood-csv/analyze`. The response contains reconciliation
+totals only; the endpoint does not retain the CSV. Use TLS outside localhost.
 
 Docker Desktop or another Docker-compatible runtime is required for the local
 PostgreSQL container. Domain tests and offline migration compilation do not

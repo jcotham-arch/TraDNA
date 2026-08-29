@@ -11,6 +11,7 @@ class Settings:
     alpaca_api_key: str
     alpaca_secret_key: str
     massive_api_key: str
+    client_api_token: str
 
     @classmethod
     def from_environment(cls) -> Settings:
@@ -23,6 +24,7 @@ class Settings:
             alpaca_api_key=os.getenv("TRADNA_ALPACA_API_KEY", ""),
             alpaca_secret_key=os.getenv("TRADNA_ALPACA_SECRET_KEY", ""),
             massive_api_key=os.getenv("TRADNA_MASSIVE_API_KEY", ""),
+            client_api_token=os.getenv("TRADNA_CLIENT_API_TOKEN", ""),
         )
 
     def require_alpaca(self) -> None:
@@ -32,3 +34,7 @@ class Settings:
     def require_massive(self) -> None:
         if not self.massive_api_key:
             raise RuntimeError("Massive backend credentials are not configured.")
+
+    def require_client_auth(self) -> None:
+        if len(self.client_api_token) < 32:
+            raise RuntimeError("A client API token of at least 32 characters is required.")
