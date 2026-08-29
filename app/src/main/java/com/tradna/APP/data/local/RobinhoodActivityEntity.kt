@@ -8,6 +8,7 @@ import androidx.room.PrimaryKey
     tableName = "robinhood_activities",
     indices = [
         Index(value = ["activitySortKey"]),
+        Index(value = ["activitySortKey", "sourceOrder"]),
         Index(value = ["instrument"]),
         Index(value = ["transCode"])
     ]
@@ -17,6 +18,7 @@ data class RobinhoodActivityEntity(
     val id: String,
     val occurrenceIndex: Int,
     val activitySortKey: Long,
+    val sourceOrder: Int,
     val activityDate: String,
     val processDate: String,
     val settleDate: String,

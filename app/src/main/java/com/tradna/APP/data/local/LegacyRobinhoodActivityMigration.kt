@@ -29,10 +29,16 @@ class LegacyRobinhoodActivityMigration(
         val legacyFileName = TraDnaStorage.loadFileName(context)
 
         return database.withTransaction {
-            val insertResults = activityDao.insertIgnoringDuplicates(
-                RobinhoodActivityMapper.toEntities(legacyActivities)
-            )
-            val insertedCount = insertResults.count { it != -1L }
+            val beforeCount = activityDao.count()
+            if (legacyActivities.isNotEmpty()) {
+                // Replacing stable IDs also repairs sourceOrder for databases
+                // created before the v3 ordering column existed.
+                activityDao.replaceAll(
+                    RobinhoodActivityMapper.toEntities(legacyActivities)
+                )
+            }
+            val afterCount = activityDao.count()
+            val insertedCount = (afterCount - beforeCount).coerceAtLeast(0)
 
             if (legacyActivities.isNotEmpty() && existingMarker == null) {
                 stateDao.upsertImportState(
@@ -60,7 +66,7 @@ class LegacyRobinhoodActivityMigration(
                 alreadyCompleted = existingMarker != null,
                 legacyRecordCount = legacyActivities.size,
                 insertedRecordCount = insertedCount,
-                databaseRecordCount = activityDao.count()
+                databaseRecordCount = afterCount
             )
         }
     }

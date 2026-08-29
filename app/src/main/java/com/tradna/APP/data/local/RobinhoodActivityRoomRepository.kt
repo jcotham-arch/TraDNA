@@ -19,10 +19,12 @@ class RobinhoodActivityRoomRepository(
         fileName: String,
         importedAtEpochMillis: Long = System.currentTimeMillis()
     ): ImportMergeResult = database.withTransaction {
-        val insertResults = activityDao.insertIgnoringDuplicates(
+        val beforeCount = activityDao.count()
+        activityDao.replaceAll(
             RobinhoodActivityMapper.toEntities(incomingActivities)
         )
-        val newCount = insertResults.count { it != -1L }
+        val afterCount = activityDao.count()
+        val newCount = (afterCount - beforeCount).coerceAtLeast(0)
 
         stateDao.upsertImportState(
             ImportStateEntity(
@@ -38,7 +40,7 @@ class RobinhoodActivityRoomRepository(
         ImportMergeResult(
             reportRecordCount = incomingActivities.size,
             newRecordCount = newCount,
-            duplicateRecordCount = incomingActivities.size - newCount,
+            duplicateRecordCount = (incomingActivities.size - newCount).coerceAtLeast(0),
             totalStoredCount = merged.size,
             mergedActivities = merged,
             fileName = fileName

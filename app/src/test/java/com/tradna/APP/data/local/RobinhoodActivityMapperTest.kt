@@ -26,6 +26,18 @@ class RobinhoodActivityMapperTest {
         assertNotEquals(first[0].id, first[1].id)
         assertEquals(first.map { it.id }, second.map { it.id })
         assertEquals(listOf(0, 1), first.map { it.occurrenceIndex })
+        assertEquals(listOf(0, 1), first.map { it.sourceOrder })
+    }
+
+    @Test
+    fun `source order preserves same-day execution sequence`() {
+        val sell = activity().copy(transCode = "Sell", amount = "$220.00")
+        val buy = activity()
+
+        val entities = RobinhoodActivityMapper.toEntities(listOf(sell, buy))
+
+        assertEquals(listOf(0, 1), entities.map { it.sourceOrder })
+        assertEquals(listOf("Sell", "Buy"), entities.map { it.transCode })
     }
 
     @Test

@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ImportStateEntity::class,
         RobinhoodActivityEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class TraDnaDatabase : RoomDatabase() {
@@ -34,7 +34,7 @@ abstract class TraDnaDatabase : RoomDatabase() {
                     TraDnaDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also {
                         instance = it
@@ -74,6 +74,20 @@ abstract class TraDnaDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_robinhood_activities_transCode` " +
                             "ON `robinhood_activities` (`transCode`)"
+                )
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `robinhood_activities` " +
+                            "ADD COLUMN `sourceOrder` INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                            "`index_robinhood_activities_activitySortKey_sourceOrder` " +
+                            "ON `robinhood_activities` (`activitySortKey`, `sourceOrder`)"
                 )
             }
         }

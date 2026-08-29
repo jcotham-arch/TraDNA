@@ -13,7 +13,7 @@ object RobinhoodActivityMapper {
     ): List<RobinhoodActivityEntity> {
         val occurrences = mutableMapOf<String, Int>()
 
-        return activities.map { activity ->
+        return activities.mapIndexed { sourceOrder, activity ->
             val fingerprint = fingerprint(activity)
             val occurrence = occurrences.getOrDefault(fingerprint, 0)
             occurrences[fingerprint] = occurrence + 1
@@ -22,6 +22,7 @@ object RobinhoodActivityMapper {
                 id = stableId(fingerprint, occurrence),
                 occurrenceIndex = occurrence,
                 activitySortKey = dateSortKey(activity.activityDate),
+                sourceOrder = sourceOrder,
                 activityDate = activity.activityDate,
                 processDate = activity.processDate,
                 settleDate = activity.settleDate,
