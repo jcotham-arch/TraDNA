@@ -64,6 +64,9 @@ import com.tradna.APP.data.local.LegacyRobinhoodActivityMigration
 import com.tradna.APP.data.local.NormalizedActivityRoomRepository
 import com.tradna.APP.data.local.RobinhoodActivityRoomRepository
 import com.tradna.APP.data.local.TraDnaDatabase
+import com.tradna.APP.coaching.CoachingSignalKind
+import com.tradna.APP.coaching.TradingBehaviorReport
+import com.tradna.APP.coaching.TradingBehaviorReportEngine
 import com.tradna.APP.market.AlpacaMarketData
 import com.tradna.APP.market.Candle
 import com.tradna.APP.market.CandleChart
@@ -991,6 +994,16 @@ fun HomeScreen(
                     Modifier.height(18.dp)
                 )
 
+                TradingBehaviorReportCard(
+                    report =
+                        TradingBehaviorReportEngine
+                            .analyze(trades)
+                )
+
+                Spacer(
+                    Modifier.height(18.dp)
+                )
+
                 ActionCard(
                     eyebrow = "RAW DATA",
                     title =
@@ -1082,6 +1095,77 @@ fun HomeScreen(
             Text(
                 text = visibleError,
                 color = TraRed
+            )
+        }
+    }
+}
+
+@Composable
+fun TradingBehaviorReportCard(
+    report: TradingBehaviorReport
+) {
+    TraCard {
+        SectionLabel("BEHAVIOR BASELINE")
+
+        Spacer(Modifier.height(16.dp))
+
+        if (report.completedTrades == 0) {
+            Text(
+                text = "Complete a stock trade before behavior metrics can be calculated.",
+                color = TraTextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 20.sp
+            )
+        } else {
+            StatRow("Completed trades", report.completedTrades.toString())
+            StatRow(
+                "Win rate",
+                report.winRatePercent?.let { String.format(Locale.US, "%.1f%%", it) } ?: "—"
+            )
+            StatRow("Realized P&L", money(report.realizedPnl))
+            StatRow(
+                "Avg winner / loser",
+                report.payoffRatio?.let { String.format(Locale.US, "%.2f×", it) } ?: "Not enough data"
+            )
+            StatRow(
+                "Average hold",
+                report.averageHoldingDays?.let { String.format(Locale.US, "%.1f days", it) } ?: "Unknown"
+            )
+
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = TraBorder)
+            Spacer(Modifier.height(14.dp))
+
+            report.signals.take(3).forEachIndexed { index, signal ->
+                Text(
+                    text = signal.title.uppercase(Locale.US),
+                    color = when (signal.kind) {
+                        CoachingSignalKind.STRENGTH -> TraGreen
+                        CoachingSignalKind.WATCH -> TraRed
+                        CoachingSignalKind.CONTEXT -> TraCyan
+                    },
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = signal.evidence,
+                    color = TraTextSecondary,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp
+                )
+                if (index != report.signals.take(3).lastIndex) {
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = report.evidenceNote,
+                color = TraTextSecondary,
+                fontSize = 10.sp,
+                lineHeight = 15.sp
             )
         }
     }
