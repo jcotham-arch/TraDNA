@@ -1,0 +1,34 @@
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Settings:
+    environment: str
+    database_url: str
+    alpaca_api_key: str
+    alpaca_secret_key: str
+    massive_api_key: str
+
+    @classmethod
+    def from_environment(cls) -> Settings:
+        return cls(
+            environment=os.getenv("TRADNA_ENVIRONMENT", "development"),
+            database_url=os.getenv(
+                "TRADNA_DATABASE_URL",
+                "postgresql+psycopg://tradna:change-me@localhost:5432/tradna",
+            ),
+            alpaca_api_key=os.getenv("TRADNA_ALPACA_API_KEY", ""),
+            alpaca_secret_key=os.getenv("TRADNA_ALPACA_SECRET_KEY", ""),
+            massive_api_key=os.getenv("TRADNA_MASSIVE_API_KEY", ""),
+        )
+
+    def require_alpaca(self) -> None:
+        if not self.alpaca_api_key or not self.alpaca_secret_key:
+            raise RuntimeError("Alpaca backend credentials are not configured.")
+
+    def require_massive(self) -> None:
+        if not self.massive_api_key:
+            raise RuntimeError("Massive backend credentials are not configured.")

@@ -31,3 +31,8 @@ private-data/
 *.jks
 *.keystore
 secrets.properties
+
+# Python backend local build/runtime artifacts
+__pycache__/
+*.py[cod]
+.venv/

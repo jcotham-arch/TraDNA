@@ -1,0 +1,52 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install backend
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Lint
+        run: ruff check src tests migrations
+
+      - name: Check formatting
+        run: ruff format --check src tests migrations
+
+      - name: Verify disabled-execution health contract
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          from tradna_backend.api.main import app
+
+          response = TestClient(app).get("/v1/health")
+          assert response.status_code == 200
+          assert response.json()["execution"] == "disabled"
+          PY
+
+      - name: Compile initial PostgreSQL migration
+        run: alembic upgrade head --sql > /tmp/tradna-migration.sql
+
