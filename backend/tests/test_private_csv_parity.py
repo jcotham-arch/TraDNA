@@ -9,6 +9,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from tradna_backend.domain.activities import parse_robinhood_csv
+from tradna_backend.services.option_reconstruction import (
+    parse_option_activities,
+    reconstruct_option_trades,
+)
 from tradna_backend.services.reconciliation import reconcile_stock_trades
 from tradna_backend.services.stock_reconstruction import reconstruct_stock_trades
 
@@ -27,6 +31,18 @@ class PrivateCsvParityTests(unittest.TestCase):
         self.assertEqual(57, reconciliation.completed_count)
         self.assertEqual(2, reconciliation.open_or_partial_count)
         self.assertEqual(Decimal("7106.72"), reconciliation.completed_realized_pnl)
+
+        option_episodes = reconstruct_option_trades(parse_option_activities(activities))
+        completed_option_pnl = sum(
+            (episode.realized_pnl for episode in option_episodes if episode.is_closed),
+            Decimal(0),
+        ).quantize(Decimal("0.01"))
+        self.assertEqual(4, len(option_episodes))
+        self.assertEqual(Decimal("-333.88"), completed_option_pnl)
+        self.assertEqual(
+            Decimal("6772.84"),
+            reconciliation.completed_realized_pnl + completed_option_pnl,
+        )
 
 
 if __name__ == "__main__":
