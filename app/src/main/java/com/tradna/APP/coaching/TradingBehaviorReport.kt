@@ -2,6 +2,8 @@ package com.tradna.APP.coaching
 
 import com.tradna.APP.data.TradeEpisode
 import com.tradna.APP.data.TradeStatus
+import com.tradna.APP.data.OptionTradeEpisode
+import com.tradna.APP.data.OptionTradeStatus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -26,7 +28,10 @@ data class TradingBehaviorReport(
     val losingTrades: Int,
     val breakevenTrades: Int,
     val winRatePercent: Double?,
+    val stockRealizedPnl: Double,
+    val optionRealizedPnl: Double,
     val realizedPnl: Double,
+    val completedOptionTrades: Int,
     val averageWinner: Double?,
     val averageLoser: Double?,
     val payoffRatio: Double?,
@@ -44,7 +49,10 @@ object TradingBehaviorReportEngine {
     private val dateFormatter =
         DateTimeFormatter.ofPattern("M/d/yyyy", Locale.US)
 
-    fun analyze(trades: List<TradeEpisode>): TradingBehaviorReport {
+    fun analyze(
+        trades: List<TradeEpisode>,
+        optionTrades: List<OptionTradeEpisode> = emptyList()
+    ): TradingBehaviorReport {
         val completed =
             trades.filter {
                 it.status == TradeStatus.CLOSED && it.closeDate != null
@@ -54,6 +62,10 @@ object TradingBehaviorReportEngine {
         val breakeven = completed.count { abs(it.realizedPnl) < 0.000001 }
         val grossProfit = winners.sumOf { it.realizedPnl }
         val grossLoss = abs(losers.sumOf { it.realizedPnl })
+        val completedOptions =
+            optionTrades.filter { it.status == OptionTradeStatus.CLOSED }
+        val stockRealizedPnl = completed.sumOf { it.realizedPnl }
+        val optionRealizedPnl = completedOptions.sumOf { it.realizedPnl }
         val averageWinner = winners.map { it.realizedPnl }.averageOrNull()
         val averageLoser = losers.map { it.realizedPnl }.averageOrNull()
         val payoffRatio =
@@ -147,7 +159,10 @@ object TradingBehaviorReportEngine {
             breakevenTrades = breakeven,
             winRatePercent = completed.takeIf { it.isNotEmpty() }
                 ?.let { winners.size.toDouble() / it.size * 100.0 },
-            realizedPnl = completed.sumOf { it.realizedPnl },
+            stockRealizedPnl = stockRealizedPnl,
+            optionRealizedPnl = optionRealizedPnl,
+            realizedPnl = stockRealizedPnl + optionRealizedPnl,
+            completedOptionTrades = completedOptions.size,
             averageWinner = averageWinner,
             averageLoser = averageLoser,
             payoffRatio = payoffRatio,
@@ -158,7 +173,7 @@ object TradingBehaviorReportEngine {
             topSymbol = top?.key,
             topSymbolTradeSharePercent = topShare,
             signals = signals,
-            evidenceNote = "Based only on reconstructed completed stock trades in imported history; this is coaching evidence, not investment advice."
+            evidenceNote = "Combined P&L includes reconstructed completed stock and option trades. Interest, deposits, withdrawals, transfers, and open positions are excluded. FIFO stock cost basis is assumed. This is coaching evidence, not investment advice."
         )
     }
 

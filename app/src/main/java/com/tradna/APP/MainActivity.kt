@@ -47,6 +47,7 @@ import com.tradna.APP.data.NormalizedOptionActivityAdapter
 import com.tradna.APP.data.NormalizedStockTradeReconstructor
 import com.tradna.APP.data.NormalizedTradeActivity
 import com.tradna.APP.data.OptionTradeReconstructor
+import com.tradna.APP.data.OptionTradeEpisode
 import com.tradna.APP.data.FuturesTradeReconstructor
 import com.tradna.APP.data.RobinhoodActivity
 import com.tradna.APP.data.RobinhoodOptionActivityParser
@@ -382,6 +383,8 @@ fun TraDNAApp() {
                                 normalizedActivities =
                                     normalizedActivities,
                                 trades = trades,
+                                robinhoodOptionTrades =
+                                    robinhoodOptionTrades,
                                 fileName = importedFileName,
                                 robinhoodOptionTradeCount =
                                     robinhoodOptionTradeCount,
@@ -634,6 +637,7 @@ fun HomeScreen(
     activities: List<RobinhoodActivity>,
     normalizedActivities: List<NormalizedTradeActivity>,
     trades: List<TradeEpisode>,
+    robinhoodOptionTrades: List<OptionTradeEpisode>,
     fileName: String,
     robinhoodOptionTradeCount: Int,
     normalizedStockTradeCount: Int,
@@ -997,7 +1001,11 @@ fun HomeScreen(
                 TradingBehaviorReportCard(
                     report =
                         TradingBehaviorReportEngine
-                            .analyze(trades)
+                            .analyze(
+                                trades = trades,
+                                optionTrades =
+                                    robinhoodOptionTrades
+                            )
                 )
 
                 Spacer(
@@ -1117,12 +1125,16 @@ fun TradingBehaviorReportCard(
                 lineHeight = 20.sp
             )
         } else {
-            StatRow("Completed trades", report.completedTrades.toString())
+            StatRow("Completed stock trades", report.completedTrades.toString())
+            StatRow("Completed option trades", report.completedOptionTrades.toString())
             StatRow(
                 "Win rate",
                 report.winRatePercent?.let { String.format(Locale.US, "%.1f%%", it) } ?: "—"
             )
-            StatRow("Realized P&L", money(report.realizedPnl))
+            Spacer(Modifier.height(8.dp))
+            StatRow("Stock realized P&L", money(report.stockRealizedPnl))
+            StatRow("Options realized P&L", money(report.optionRealizedPnl))
+            StatRow("Combined trading P&L", money(report.realizedPnl))
             StatRow(
                 "Avg winner / loser",
                 report.payoffRatio?.let { String.format(Locale.US, "%.2f×", it) } ?: "Not enough data"

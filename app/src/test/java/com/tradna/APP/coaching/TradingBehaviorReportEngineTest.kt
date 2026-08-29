@@ -4,6 +4,10 @@ import com.tradna.APP.data.RobinhoodActivity
 import com.tradna.APP.data.StockExecution
 import com.tradna.APP.data.TradeEpisode
 import com.tradna.APP.data.TradeStatus
+import com.tradna.APP.data.OptionTradeEpisode
+import com.tradna.APP.data.OptionTradeStatus
+import com.tradna.APP.market.OptionInstrument
+import com.tradna.APP.market.OptionRight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -53,6 +57,23 @@ class TradingBehaviorReportEngineTest {
         assertTrue(report.signals.all { it.evidence.isNotBlank() })
     }
 
+    @Test
+    fun `combines only closed option pnl with completed stock pnl`() {
+        val stock = trade("STOCK", 1, "3/1/2026", "3/2/2026", 100.0, 7_106.72)
+        val closedOption = optionTrade("CLOSED", OptionTradeStatus.CLOSED, -333.88)
+        val openOption = optionTrade("OPEN", OptionTradeStatus.OPEN, 500.0)
+
+        val report = TradingBehaviorReportEngine.analyze(
+            trades = listOf(stock),
+            optionTrades = listOf(closedOption, openOption)
+        )
+
+        assertEquals(7_106.72, report.stockRealizedPnl, 0.001)
+        assertEquals(-333.88, report.optionRealizedPnl, 0.001)
+        assertEquals(6_772.84, report.realizedPnl, 0.001)
+        assertEquals(1, report.completedOptionTrades)
+    }
+
     private fun trade(
         symbol: String,
         sequence: Int,
@@ -80,4 +101,27 @@ class TradingBehaviorReportEngineTest {
             executions = listOf(StockExecution(open, symbol, "Buy", 1.0, cost, cost, source))
         )
     }
+
+    private fun optionTrade(
+        symbol: String,
+        status: OptionTradeStatus,
+        pnl: Double
+    ) = OptionTradeEpisode(
+        id = symbol,
+        contract = OptionInstrument(
+            symbol = symbol,
+            underlyingSymbol = "TEST",
+            expirationDate = "12/18/2026",
+            strikePrice = 100.0,
+            right = OptionRight.CALL
+        ),
+        status = status,
+        openDate = "3/1/2026",
+        closeDate = if (status == OptionTradeStatus.CLOSED) "3/2/2026" else null,
+        netContracts = if (status == OptionTradeStatus.CLOSED) 0.0 else 1.0,
+        averageEntryPremium = 1.0,
+        averageExitPremium = if (status == OptionTradeStatus.CLOSED) 0.0 else null,
+        realizedPnl = pnl,
+        executions = emptyList()
+    )
 }
