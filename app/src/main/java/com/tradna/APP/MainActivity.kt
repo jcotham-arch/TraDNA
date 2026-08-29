@@ -69,6 +69,7 @@ import com.tradna.APP.coaching.CoachingSignalKind
 import com.tradna.APP.coaching.TradingBehaviorReport
 import com.tradna.APP.coaching.TradingBehaviorReportEngine
 import com.tradna.APP.market.AlpacaMarketData
+import com.tradna.APP.lab.AgentLabDashboard
 import com.tradna.APP.market.Candle
 import com.tradna.APP.market.CandleChart
 import com.tradna.APP.replay.HistoricalTradeReviewScreen
@@ -117,7 +118,7 @@ enum class TraDestination(
     val icon: ImageVector
 ) {
     HOME("Home", Icons.Default.Home),
-    TRAIN("Train", Icons.Default.List),
+    AGENT("Agent", Icons.Default.List),
     REPLAY("Replay", Icons.Default.PlayArrow),
     DNA("DNA", Icons.Default.Info),
     LAB("Lab", Icons.Default.Settings)
@@ -487,12 +488,10 @@ fun TraDNAApp() {
                             )
                         }
 
-                        TraDestination.TRAIN -> {
+                        TraDestination.AGENT -> {
 
-                            PlaceholderScreen(
-                                title = "TRAIN",
-                                subtitle =
-                                    "Technical training protocols are next."
+                            AgentLabDashboard(
+                                trades = trades
                             )
                         }
 
