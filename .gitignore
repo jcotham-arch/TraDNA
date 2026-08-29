@@ -25,6 +25,8 @@ private-data/
 # Credentials and signing material
 .env
 .env.*
+!.env.example
+!backend/.env.example
 *.pem
 *.key
 *.p12
@@ -36,3 +38,4 @@ secrets.properties
 __pycache__/
 *.py[cod]
 .venv/
+.pytest_cache/
