@@ -87,13 +87,14 @@ def _event(
     payload: dict[str, Any],
 ) -> NormalizedBrokerEvent:
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    payload_sha256 = hashlib.sha256(canonical.encode()).hexdigest()
     return NormalizedBrokerEvent(
-        provider_event_id=provider_event_id,
+        provider_event_id=f"{provider_event_id}:{payload_sha256[:16]}",
         event_type=event_type,
         occurred_at=occurred_at,
         received_at=received_at,
         payload=payload,
-        payload_sha256=hashlib.sha256(canonical.encode()).hexdigest(),
+        payload_sha256=payload_sha256,
     )
 
 

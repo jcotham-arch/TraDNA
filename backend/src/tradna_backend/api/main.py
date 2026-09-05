@@ -1,14 +1,20 @@
 import hmac
+from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from tradna_backend import __version__
 from tradna_backend.config import Settings
+from tradna_backend.db.session import build_session_factory
 from tradna_backend.services.historical_report import build_robinhood_csv_report
+from tradna_backend.services.live_sync import latest_quotes, latest_sync_run
 
 settings = Settings.from_environment()
+session_factory = build_session_factory(settings)
 app = FastAPI(
     title="TraDNA API",
     version=__version__,
@@ -30,6 +36,32 @@ class HistoricalReportSummary(BaseModel):
     stock_realized_pnl: Decimal
     option_realized_pnl: Decimal
     combined_realized_pnl: Decimal
+
+
+class LiveQuoteSummary(BaseModel):
+    symbol: str
+    mark_price: Decimal
+    bid_price: Decimal | None
+    ask_price: Decimal | None
+    previous_close: Decimal | None
+    observed_at: datetime
+
+
+class LiveStatusSummary(BaseModel):
+    connection: str
+    execution: str
+    last_sync_status: str | None
+    last_sync_started_at: datetime | None
+    last_sync_completed_at: datetime | None
+    event_count: int
+    quote_count: int
+    error_code: str | None
+    quotes: list[LiveQuoteSummary]
+
+
+def get_db():
+    with session_factory() as db:
+        yield db
 
 
 def require_client_token(authorization: str | None = Header(default=None)) -> None:
@@ -93,4 +125,36 @@ async def analyze_robinhood_csv(request: Request) -> HistoricalReportSummary:
         stock_realized_pnl=report.stock_realized_pnl,
         option_realized_pnl=report.option_realized_pnl,
         combined_realized_pnl=report.combined_realized_pnl,
+    )
+
+
+@app.get(
+    "/v1/live/status",
+    response_model=LiveStatusSummary,
+    tags=["live"],
+    dependencies=[Depends(require_client_token)],
+)
+def live_status(db: Annotated[Session, Depends(get_db)]) -> LiveStatusSummary:
+    run = latest_sync_run(db)
+    quotes = latest_quotes(db)
+    return LiveStatusSummary(
+        connection="ready_for_oauth" if run is None else "connected",
+        execution="disabled",
+        last_sync_status=run.status if run else None,
+        last_sync_started_at=run.started_at if run else None,
+        last_sync_completed_at=run.completed_at if run else None,
+        event_count=run.event_count if run else 0,
+        quote_count=run.quote_count if run else 0,
+        error_code=run.error_code if run else None,
+        quotes=[
+            LiveQuoteSummary(
+                symbol=quote.symbol,
+                mark_price=quote.mark_price,
+                bid_price=quote.bid_price,
+                ask_price=quote.ask_price,
+                previous_close=quote.previous_close,
+                observed_at=quote.observed_at,
+            )
+            for quote in quotes
+        ],
     )

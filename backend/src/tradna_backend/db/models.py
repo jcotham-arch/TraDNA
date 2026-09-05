@@ -119,3 +119,31 @@ class PaperShadowEventRecord(Base):
     symbol: Mapped[str] = mapped_column(String(20), index=True)
     payload: Mapped[dict] = mapped_column(JSON)
     payload_sha256: Mapped[str] = mapped_column(String(64))
+
+
+class BrokerSyncRunRecord(Base):
+    __tablename__ = "broker_sync_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("brokerage_accounts.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(20), index=True)
+    event_count: Mapped[int] = mapped_column(default=0)
+    quote_count: Mapped[int] = mapped_column(default=0)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+
+
+class BrokerQuoteRecord(Base):
+    __tablename__ = "broker_quotes"
+    __table_args__ = (UniqueConstraint("provider", "symbol", "observed_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    provider: Mapped[str] = mapped_column(String(40))
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    mark_price: Mapped[Decimal] = mapped_column(Numeric(20, 8))
+    bid_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8))
+    ask_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8))
+    previous_close: Mapped[Decimal | None] = mapped_column(Numeric(20, 8))

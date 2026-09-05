@@ -6,7 +6,7 @@ execution. The Android application remains the client and offline cache.
 
 ## Safety boundary
 
-- No Robinhood credentials are accepted yet.
+- No Robinhood credentials are accepted in environment variables or the APK.
 - No order-placement endpoint exists.
 - Provider keys are read from backend environment variables only.
 - Raw brokerage events are immutable; derived analyses are versioned.
@@ -39,3 +39,15 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 Set `TRADNA_GOLDEN_CSV` to a local Robinhood CSV path to run the private parity
 test. The CSV and its contents are never copied into the repository.
+
+## Live read-only boundary
+
+`GET /v1/live/status` is bearer-authenticated and returns the latest broker sync
+state and one latest quote per symbol. The Robinhood adapter accepts an injected
+MCP tool caller and enforces a read-only tool allowlist. OAuth token storage and
+the Streamable HTTP connection are deliberately the final deployment step; no
+order tools are exposed by the adapter.
+
+The container runs all Alembic migrations before starting the API. Production
+deployments must provide PostgreSQL, TLS, a random client token, and encrypted
+OAuth storage.
