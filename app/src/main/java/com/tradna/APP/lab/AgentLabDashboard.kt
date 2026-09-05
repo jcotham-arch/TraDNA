@@ -90,14 +90,22 @@ fun AgentLabDashboard(
         mutableStateOf(false)
     }
 
+    var showBackendConnection by remember {
+        mutableStateOf(false)
+    }
+
     BackHandler(
         enabled =
             showAgentScreen ||
                     showJournalScreen ||
-                    showPaperSandbox
+                    showPaperSandbox ||
+                    showBackendConnection
     ) {
 
         when {
+
+            showBackendConnection ->
+                showBackendConnection = false
 
             showPaperSandbox ->
                 showPaperSandbox = false
@@ -383,6 +391,11 @@ fun AgentLabDashboard(
         return
     }
 
+    if (showBackendConnection) {
+        BackendConnectionScreen(onBack = { showBackendConnection = false })
+        return
+    }
+
     if (
         showJournalScreen
     ) {
@@ -462,6 +475,28 @@ fun AgentLabDashboard(
                     14.dp
                 )
         )
+
+        LabCard {
+            LabSectionLabel(text = "LIVE CONNECTION", color = LabCyan)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "Connect this phone to the secure TraDNA backend and inspect Robinhood synchronization health.",
+                color = LabSecondary,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { showBackendConnection = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LabCyan,
+                    contentColor = LabBackground
+                )
+            ) { Text("BACKEND CONNECTION", fontWeight = FontWeight.Bold) }
+        }
+
+        Spacer(Modifier.height(14.dp))
 
         LabCard {
             LabSectionLabel(text = "PAPER SANDBOX", color = LabGreen)
