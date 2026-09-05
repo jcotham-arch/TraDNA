@@ -34,3 +34,7 @@ backend will implement the official Agentic MCP read-only tools first: positions
 tax lots, and order history. Placement tools remain absent until paper-trading
 and risk-gate acceptance criteria are satisfied.
 
+Read-only MCP capability discovery and the first broker-to-CSV aggregate
+reconciliation were completed on 2026-08-29. See
+`TRADNA_ROBINHOOD_READ_ONLY_RECONCILIATION.md` for the sanitized results and the
+remaining $15.77 cost-basis/reconstruction delta.

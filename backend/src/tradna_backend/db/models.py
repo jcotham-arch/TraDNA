@@ -105,3 +105,17 @@ class AuditEvent(Base):
     object_ref: Mapped[str] = mapped_column(String(300))
     detail: Mapped[str] = mapped_column(Text)
     metadata_json: Mapped[dict] = mapped_column(JSON)
+
+
+class PaperShadowEventRecord(Base):
+    __tablename__ = "paper_shadow_events"
+    __table_args__ = (UniqueConstraint("session_id", "event_key"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[str] = mapped_column(String(100), index=True)
+    event_key: Mapped[str] = mapped_column(String(300))
+    event_type: Mapped[str] = mapped_column(String(40), index=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+    payload_sha256: Mapped[str] = mapped_column(String(64))

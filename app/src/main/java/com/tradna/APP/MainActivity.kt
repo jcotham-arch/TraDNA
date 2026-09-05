@@ -118,10 +118,8 @@ enum class TraDestination(
     val icon: ImageVector
 ) {
     HOME("Home", Icons.Default.Home),
-    AGENT("Agent", Icons.Default.List),
-    REPLAY("Replay", Icons.Default.PlayArrow),
-    DNA("DNA", Icons.Default.Info),
-    LAB("Lab", Icons.Default.Settings)
+    REPLAY("Review", Icons.Default.PlayArrow),
+    AGENT("Agent", Icons.Default.List)
 }
 
 sealed class InternalScreen {
@@ -505,22 +503,6 @@ fun TraDNAApp() {
                             )
                         }
 
-                        TraDestination.DNA -> {
-
-                            DnaScreen(
-                                trades = trades
-                            )
-                        }
-
-                        TraDestination.LAB -> {
-
-                            MultiAssetLabHost(
-                                stockTrades =
-                                    trades,
-                                multiAssetTrades =
-                                    multiAssetTrades
-                            )
-                        }
                     }
                 }
 

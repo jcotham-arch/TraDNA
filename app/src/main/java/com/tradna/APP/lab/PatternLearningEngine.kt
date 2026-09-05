@@ -38,6 +38,15 @@ data class SignalPattern(
     val confidencePercent: Int
 )
 
+data class SymbolPattern(
+    val symbol: String,
+    val trades: Int,
+    val profitableRatePercent: Double?,
+    val averageReturnPercent: Double?,
+    val realizedPnl: Double,
+    val confidencePercent: Int
+)
+
 data class AgentPatternProfile(
     val totalRecords: Int,
 
@@ -62,6 +71,8 @@ data class AgentPatternProfile(
 
     val signalPatterns: List<SignalPattern>,
     val strategyPatterns: List<StrategyPattern>,
+    val symbolPatterns: List<SymbolPattern>,
+    val vwapPatterns: List<PatternEvidence>,
 
     val behavioralPatterns: List<PatternEvidence>,
     val coachingPriorities: List<String>,
@@ -102,6 +113,8 @@ object PatternLearningEngine {
 
                 signalPatterns = emptyList(),
                 strategyPatterns = emptyList(),
+                symbolPatterns = emptyList(),
+                vwapPatterns = emptyList(),
 
                 behavioralPatterns = emptyList(),
                 coachingPriorities =
@@ -221,6 +234,16 @@ object PatternLearningEngine {
                 records
             )
 
+        val symbolPatterns =
+            buildSymbolPatterns(
+                records
+            )
+
+        val vwapPatterns =
+            buildVwapPatterns(
+                records
+            )
+
         val behavioralPatterns =
             buildBehavioralPatterns(
                 records
@@ -325,6 +348,12 @@ object PatternLearningEngine {
             strategyPatterns =
                 strategyPatterns,
 
+            symbolPatterns =
+                symbolPatterns,
+
+            vwapPatterns =
+                vwapPatterns,
+
             behavioralPatterns =
                 behavioralPatterns,
 
@@ -339,6 +368,64 @@ object PatternLearningEngine {
                     profileConfidence
                 )
         )
+    }
+
+    private fun buildSymbolPatterns(
+        records: List<AgentTrainingRecord>
+    ): List<SymbolPattern> =
+        records
+            .filter { it.symbol.isNotBlank() }
+            .groupBy { it.symbol.trim().uppercase() }
+            .map { (symbol, matching) ->
+                SymbolPattern(
+                    symbol = symbol,
+                    trades = matching.size,
+                    profitableRatePercent = percent(
+                        matching.count { it.profitableTrade },
+                        matching.size
+                    ),
+                    averageReturnPercent = averageOrNull(
+                        matching.mapNotNull { it.actualReturnPercent }
+                    ),
+                    realizedPnl = matching.sumOf { it.actualRealizedPnl },
+                    confidencePercent = confidenceForSample(
+                        matching.size,
+                        records.size
+                    )
+                )
+            }
+            .sortedWith(
+                compareByDescending<SymbolPattern> { it.trades }
+                    .thenByDescending { it.realizedPnl }
+                    .thenBy { it.symbol }
+            )
+
+    private fun buildVwapPatterns(
+        records: List<AgentTrainingRecord>
+    ): List<PatternEvidence> {
+        val withVwap = records.filter { it.entryDistanceFromVwapPercent != null }
+        if (withVwap.isEmpty()) return emptyList()
+
+        return listOf(
+            evidenceForRecords(
+                title = "Below VWAP",
+                category = "ENTRY LOCATION",
+                summary = "Entry was more than 0.25% below reconstructed VWAP.",
+                records = withVwap.filter { it.entryDistanceFromVwapPercent!! < -0.25 }
+            ),
+            evidenceForRecords(
+                title = "Near VWAP",
+                category = "ENTRY LOCATION",
+                summary = "Entry was within 0.25% of reconstructed VWAP.",
+                records = withVwap.filter { abs(it.entryDistanceFromVwapPercent!!) <= 0.25 }
+            ),
+            evidenceForRecords(
+                title = "Above VWAP",
+                category = "ENTRY LOCATION",
+                summary = "Entry was more than 0.25% above reconstructed VWAP.",
+                records = withVwap.filter { it.entryDistanceFromVwapPercent!! > 0.25 }
+            )
+        ).filter { it.sampleSize > 0 }
     }
 
     private fun buildEnvironmentGroups(

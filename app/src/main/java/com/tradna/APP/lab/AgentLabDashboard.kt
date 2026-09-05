@@ -86,13 +86,21 @@ fun AgentLabDashboard(
         )
     }
 
+    var showPaperSandbox by remember {
+        mutableStateOf(false)
+    }
+
     BackHandler(
         enabled =
             showAgentScreen ||
-                    showJournalScreen
+                    showJournalScreen ||
+                    showPaperSandbox
     ) {
 
         when {
+
+            showPaperSandbox ->
+                showPaperSandbox = false
 
             showJournalScreen ->
                 showJournalScreen =
@@ -369,6 +377,13 @@ fun AgentLabDashboard(
         )
 
     if (
+        showPaperSandbox
+    ) {
+        PaperSandboxScreen(onBack = { showPaperSandbox = false })
+        return
+    }
+
+    if (
         showJournalScreen
     ) {
 
@@ -447,6 +462,37 @@ fun AgentLabDashboard(
                     14.dp
                 )
         )
+
+        LabCard {
+            LabSectionLabel(text = "PAPER SANDBOX", color = LabGreen)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "$5,000 simulated account • 10% maximum per entry",
+                color = LabText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(7.dp))
+            Text(
+                text = "Test frozen Agent recommendations without sending anything to Robinhood.",
+                color = LabSecondary,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            )
+            Spacer(Modifier.height(14.dp))
+            Button(
+                onClick = { showPaperSandbox = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LabGreen,
+                    contentColor = LabBackground
+                )
+            ) {
+                Text("OPEN PAPER SANDBOX", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
 
         if (
             isTraining
@@ -774,43 +820,7 @@ fun AgentLabDashboard(
                 )
         )
 
-        PatternOverviewCard(
-            metrics =
-                metrics
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(
-                    14.dp
-                )
-        )
-
-        AgentLearningCard(
-            metrics =
-                metrics
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(
-                    14.dp
-                )
-        )
-
-        StrategyEvidenceCard(
-            records =
-                records
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(
-                    14.dp
-                )
-        )
-
-        PersonalPatternProfileCard(
+        TradingDnaCard(
             profile =
                 patternProfile
         )
@@ -1690,6 +1700,104 @@ private fun LastFailureCard(
                 12.sp,
             lineHeight =
                 18.sp
+        )
+    }
+}
+
+@Composable
+private fun TradingDnaCard(
+    profile: AgentPatternProfile
+) {
+    LabCard {
+        LabSectionLabel(
+            text = "YOUR TRADING DNA",
+            color = LabViolet
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = if (profile.totalRecords == 0) {
+                "Train historical trades to measure your preferred symbols and VWAP-relative entry behavior."
+            } else {
+                "What has worked in your own history—not a generic market rule."
+            },
+            color = LabSecondary,
+            fontSize = 12.sp,
+            lineHeight = 18.sp
+        )
+
+        if (profile.totalRecords == 0) return@LabCard
+
+        Spacer(Modifier.height(14.dp))
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                LabSmallLabel("TRAINED TRADES")
+                Text(
+                    text = profile.totalRecords.toString(),
+                    color = LabText,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                LabSmallLabel("CONFIDENCE")
+                Text(
+                    text = "${profile.profileConfidencePercent}%",
+                    color = readinessColor(profile.profileConfidencePercent),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (profile.symbolPatterns.isNotEmpty()) {
+            Spacer(Modifier.height(18.dp))
+            LabSmallLabel("SYMBOL EXPERIENCE")
+            Spacer(Modifier.height(6.dp))
+
+            profile.symbolPatterns.take(5).forEach { symbol ->
+                LabValueRow(
+                    label = "${symbol.symbol} • ${symbol.trades} trade${if (symbol.trades == 1) "" else "s"}",
+                    value = buildString {
+                        symbol.profitableRatePercent?.let { append(formatPercent(it)) }
+                        symbol.averageReturnPercent?.let {
+                            if (isNotEmpty()) append(" • ")
+                            append(formatSignedPercent(it))
+                        }
+                    }.ifBlank { "—" },
+                    valueColor = if (symbol.realizedPnl >= 0.0) LabGreen else LabRed
+                )
+            }
+        }
+
+        if (profile.vwapPatterns.isNotEmpty()) {
+            Spacer(Modifier.height(18.dp))
+            LabSmallLabel("ENTRY VS VWAP")
+            Spacer(Modifier.height(6.dp))
+
+            profile.vwapPatterns.forEach { pattern ->
+                LabValueRow(
+                    label = "${pattern.title} • ${pattern.sampleSize}",
+                    value = buildString {
+                        pattern.profitableRatePercent?.let { append(formatPercent(it)) }
+                        pattern.averageReturnPercent?.let {
+                            if (isNotEmpty()) append(" • ")
+                            append(formatSignedPercent(it))
+                        }
+                    }.ifBlank { "—" },
+                    valueColor = readinessColor(pattern.confidencePercent)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = "Rates show historical outcomes with sample size. They do not authorize or trigger trades.",
+            color = LabSecondary,
+            fontSize = 10.sp,
+            lineHeight = 15.sp
         )
     }
 }
